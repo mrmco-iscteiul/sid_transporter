@@ -2,7 +2,9 @@ package pt.iscte.sid;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.async.client.MongoClient;
+import org.bson.Document;
 import org.eclipse.paho.client.mqttv3.*;
+import pt.iscte.sid.utils.Utils;
 
 import java.util.ArrayList;
 
@@ -10,7 +12,7 @@ public class SimpleMqttCallback implements MqttCallback {
 
     private MqttClient client;
     private MongoClient mongoClient;
-    private ArrayList<HumidityTemperature> humidityTemperatureList;
+    private ArrayList<Document> humidityTemperatureList;
     private String topic;
     private ObjectMapper mapper;
 
@@ -37,17 +39,11 @@ public class SimpleMqttCallback implements MqttCallback {
     public void messageArrived(String topic, MqttMessage mqttMessage) throws Exception {
         String messageArrived = new String(mqttMessage.getPayload());
         HumidityTemperature humidityTemperature = mapper.readValue(messageArrived, HumidityTemperature.class);
-
         // Convert Date
         humidityTemperature.setDate(Utils.convertDate(humidityTemperature.getDate()));
-
-        HumidityTemperatureValidator validator = new HumidityTemperatureValidator(humidityTemperature);
-        validator.processMessage();
-        if (validator.isValid()) {
-            // We are going to persist the data
-            PersistData persistData = new PersistData(mongoClient, humidityTemperatureList, humidityTemperature);
-            persistData.execute();
-        }
+        // We are going to persist the data
+        PersistData persistData = new PersistData(mongoClient, humidityTemperatureList, humidityTemperature);
+        persistData.execute();
     }
 
     public void deliveryComplete(IMqttDeliveryToken iMqttDeliveryToken) {

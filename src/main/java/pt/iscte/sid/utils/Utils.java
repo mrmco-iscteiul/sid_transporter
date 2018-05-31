@@ -1,4 +1,4 @@
-package pt.iscte.sid;
+package pt.iscte.sid.utils;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
