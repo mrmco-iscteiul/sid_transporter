@@ -1,0 +1,4 @@
+- Formato incorreto faz quebrar a ligação - {"temperature": "22", "humidity": "50", "date": "10/10/2018",}
+       - Após quebra de ligação, o cliente volta ao ativo :D
+
+- BadFormat - Falta fazer parse da mensagem e ver se está no formato certo

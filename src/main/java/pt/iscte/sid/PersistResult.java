@@ -26,14 +26,15 @@ public class PersistResult implements SingleResultCallback<Void> {
     @Override
     public void onResult(Void aVoid, Throwable throwable) {
         if (throwable == null) {
-            System.out.println("SUCCESS");
+            //System.out.println("SUCCESS");
         } else {
             if (throwable.getCause() instanceof IOException) {
-                System.out.println("OH NO!!!");
-                System.out.println("Connection Was LOST!!!");
+//                System.out.println("OH NO!!!");
+//                System.out.println("Connection Was LOST!!!");
             }
-            System.out.println("There was a problem persisting the data!!!");
-            System.out.println("Lets save the element to the List.");
+            throwable.printStackTrace();
+//            System.out.println("There was a problem persisting the data!!!");
+//            System.out.println("Lets save the element to the List.");
             // humidityTemperatureList.add(humidityTemperature);
         }
     }

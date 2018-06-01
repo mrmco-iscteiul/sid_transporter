@@ -15,69 +15,97 @@ import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.MqttSecurityException;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Properties;
 
 public class Main {
-    public static void main(String[] args) {
-        processConfigFile();
-        boolean alreadyRunning;
-        try {
-            JUnique.acquireLock(ApplicationConstants.ID, new MessageHandler() {
-                @Override
-                public String handle(String s) {
-                    System.out.println("This is some new Argument Received!");
-                    return "There is something going ON!!!";
-                }
-            });
-            alreadyRunning = false;
-        } catch (AlreadyLockedException e) {
-            alreadyRunning = true;
-        }
-
-        if (!alreadyRunning) {
+    public static void main(String[] args) throws InterruptedException {
+        while (true) {
+            processConfigFile();
+            boolean alreadyRunning;
             try {
-                MqttClient client = new MqttClient("tcp://iot.eclipse.org:1883", MqttClient.generateClientId());
-                // MqttClient client = new MqttClient("tcp://iot.eclipse.org:1883", "js-utility-oDpOk");
-                MongoClient mongoClient = MongoClients.create(ApplicationConstants.MONGO_LOGIN_AUTH);
-                client.setCallback(new SimpleMqttCallback(client, mongoClient, ApplicationConstants.TOPIC));
-                MongoCollection<Document> collection = mongoClient
-                        .getDatabase(ApplicationConstants.MONGO_DATABASE)
-                        .getCollection(ApplicationConstants.MONGO_COLLECTION);
-                PersistResult singleResultCallback = new PersistResult();
-                ArrayList<Document> humidityTemperatureList = new ArrayList<>();
+                JUnique.acquireLock(ApplicationConstants.ID, new MessageHandler() {
+                    @Override
+                    public String handle(String s) {
+                        System.out.println("This is some new Argument Received!");
+                        return "There is something going ON!!!";
+                    }
+                });
+                alreadyRunning = false;
+            } catch (AlreadyLockedException e) {
+                alreadyRunning = true;
+            }
 
-                for (int i = 0; i < 1000; i++) {
-                    HumidityTemperature tmp = new HumidityTemperature();
-                    tmp.setHumidity((double) i);
-                    tmp.setTemperature((double) i);
-                    tmp.setTime("23:30:00");
-                    tmp.setDate("2018-05-31");
-                    humidityTemperatureList.add(new Document("temperature", tmp.getTemperature())
-                            .append("humidity", tmp.getHumidity())
-                            .append("date", tmp.getDate())
-                            .append("time", tmp.getTime())
-                            .append("created_at", new BsonTimestamp()));
+            if (!alreadyRunning) {
+
+                try {
+                    MqttClient client = new MqttClient("tcp://iot.eclipse.org:1883", MqttClient.generateClientId());
+
+                    MongoClient mongoClient = MongoClients.create(ApplicationConstants.MONGO_LOGIN_AUTH);
+                    MongoCollection<Document> collection = mongoClient
+                            .getDatabase(ApplicationConstants.MONGO_DATABASE)
+                            .getCollection(ApplicationConstants.MONGO_COLLECTION);
+                    PersistResult singleResultCallback = new PersistResult();
+                    ArrayList<Document> humidityTemperatureList = new ArrayList<>();
+
+                    for (int i = 0; i < 4; i++) {
+                        HumidityTemperature tmp = new HumidityTemperature();
+                        tmp.setHumidity((double) i);
+                        tmp.setTemperature((double) i);
+                        tmp.setTime("23:00:00");
+                        tmp.setDate("2018-06-01");
+                        humidityTemperatureList.add(
+                                new Document("temperature", tmp.getTemperature())
+                                        .append("humidity", tmp.getHumidity())
+                                        .append("date", tmp.getDate())
+                                        .append("time", tmp.getTime())
+                                        .append("created_at", new BsonTimestamp())
+                        );
+                    }
+                    System.out.println("GOING TO START MIGRATION NOW!!!!");
+
+                    for (Document document : humidityTemperatureList) {
+                        collection.insertOne(document, singleResultCallback);
+                        Thread.sleep(1);
+                    }
+                    try {
+                        WatchService watchService = FileSystems.getDefault().newWatchService();
+                        String dir = System.getProperty("user.dir") + "/src/main/resources/";
+                        Path path = Paths.get(dir);
+                        WatchKey watchKey = path.register(
+                                watchService, StandardWatchEventKinds.ENTRY_MODIFY);
+                        WatchKey key;
+                        while ((key = watchService.take()) != null) {
+                            for (WatchEvent<?> event : key.pollEvents()) {
+                                System.out.println("Changed!!!" + event.kind());
+                                System.out.println(key.pollEvents().toArray().toString());
+                                processConfigFile();
+
+                            }
+                            key.reset();
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    client.connect();
+                    client.subscribe(ApplicationConstants.TOPIC);
+                } catch (MqttSecurityException e) {
+                    e.printStackTrace();
+                } catch (MqttException e) {
+                    e.printStackTrace();
                 }
-                System.out.println("GOING TO START MIGRATION NOW!!!!");
-                mongoClient
-                        .getDatabase(ApplicationConstants.MONGO_DATABASE)
-                        .getCollection(ApplicationConstants.MONGO_COLLECTION)
-                        .insertMany(humidityTemperatureList, singleResultCallback);
-                System.out.println("Finished the a COMPLETE TRANSACTION");
-                client.connect();
-                client.subscribe(ApplicationConstants.TOPIC);
-            } catch (MqttException e) {
-               e.printStackTrace();
-           }
+            }
         }
     }
+
 
     /**
      * Processes the configuration file properties
@@ -96,6 +124,7 @@ public class Main {
                     + properties.getProperty("dbPass") + "@" + properties.getProperty("ip")
                     + ":" + properties.getProperty("port") + "/" + ApplicationConstants.MONGO_DATABASE;
             ApplicationConstants.MONGO_LOGIN_AUTH = auth;
+            System.out.println(ApplicationConstants.MONGO_LOGIN_AUTH);
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
@@ -109,3 +138,4 @@ public class Main {
         }
     }
 }
+
