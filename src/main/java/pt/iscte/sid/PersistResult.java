@@ -1,15 +1,16 @@
 package pt.iscte.sid;
 
-import com.mongodb.MongoSocketOpenException;
 import com.mongodb.async.SingleResultCallback;
 import org.bson.Document;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class PersistResult implements SingleResultCallback<Void> {
 
+    private static final Logger LOGGER = Logger.getLogger(PersistResult.class.getName());
     private ArrayList<Document> humidityTemperatureList;
     private Document humidityTemperature;
 
@@ -26,15 +27,12 @@ public class PersistResult implements SingleResultCallback<Void> {
     @Override
     public void onResult(Void aVoid, Throwable throwable) {
         if (throwable == null) {
-            System.out.println("SUCCESS");
+            LOGGER.log(Level.FINE, "Success saving Document.");
         } else {
             if (throwable.getCause() instanceof IOException) {
-                System.out.println("OH NO!!!");
-                System.out.println("Connection Was LOST!!!");
+                LOGGER.log(Level.SEVERE, "Connection to MongoDB was Lost.");
+                humidityTemperatureList.add(humidityTemperature);
             }
-            System.out.println("There was a problem persisting the data!!!");
-            System.out.println("Lets save the element to the List.");
-            // humidityTemperatureList.add(humidityTemperature);
         }
     }
 }

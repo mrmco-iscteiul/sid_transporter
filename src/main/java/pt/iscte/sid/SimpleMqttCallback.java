@@ -5,6 +5,7 @@ import com.mongodb.async.client.MongoClient;
 import org.bson.Document;
 import org.eclipse.paho.client.mqttv3.*;
 import pt.iscte.sid.utils.Utils;
+import pt.iscte.sid.validator.HumidityTemperatureValidador;
 
 import java.util.ArrayList;
 
@@ -25,7 +26,6 @@ public class SimpleMqttCallback implements MqttCallback {
     }
 
     public void connectionLost(Throwable throwable) {
-        System.out.println("No Connection");
         if (!client.isConnected()) {
             try {
                 client.connect();
@@ -39,11 +39,13 @@ public class SimpleMqttCallback implements MqttCallback {
     public void messageArrived(String topic, MqttMessage mqttMessage) throws Exception {
         String messageArrived = new String(mqttMessage.getPayload());
         HumidityTemperature humidityTemperature = mapper.readValue(messageArrived, HumidityTemperature.class);
-        // Convert Date
-        humidityTemperature.setDate(Utils.convertDate(humidityTemperature.getDate()));
-        // We are going to persist the data
-        PersistData persistData = new PersistData(mongoClient, humidityTemperatureList, humidityTemperature);
-        persistData.execute();
+        HumidityTemperatureValidador validador = new HumidityTemperatureValidador(humidityTemperature);
+        validador.processValidation();
+        if (validador.isValid()) {
+            humidityTemperature.setDate(Utils.convertDate(humidityTemperature.getDate()));
+            PersistData persistData = new PersistData(mongoClient, humidityTemperatureList, humidityTemperature);
+            persistData.execute();
+        }
     }
 
     public void deliveryComplete(IMqttDeliveryToken iMqttDeliveryToken) {
