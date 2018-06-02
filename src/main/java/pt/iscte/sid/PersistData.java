@@ -25,7 +25,7 @@ public class PersistData {
         mongoClient
                 .getDatabase(ApplicationConstants.MONGO_DATABASE)
                 .getCollection(ApplicationConstants.MONGO_COLLECTION)
-                .insertOne(data, new PersistResult(humidityTemperatureList, data));
+                .insertOne(data, new PersistResult(humidityTemperatureList, data, mongoClient));
     }
 
     private Document createDatabaseObject(HumidityTemperature humidityTemperature) {

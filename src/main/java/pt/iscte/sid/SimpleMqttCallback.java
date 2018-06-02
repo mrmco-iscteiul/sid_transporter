@@ -8,9 +8,12 @@ import pt.iscte.sid.utils.Utils;
 import pt.iscte.sid.validator.HumidityTemperatureValidador;
 
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class SimpleMqttCallback implements MqttCallback {
 
+    private static final Logger LOGGER = Logger.getLogger(SimpleMqttCallback.class.getName());
     private MqttClient client;
     private MongoClient mongoClient;
     private ArrayList<Document> humidityTemperatureList;
@@ -36,15 +39,19 @@ public class SimpleMqttCallback implements MqttCallback {
         }
     }
 
-    public void messageArrived(String topic, MqttMessage mqttMessage) throws Exception {
-        String messageArrived = new String(mqttMessage.getPayload());
-        HumidityTemperature humidityTemperature = mapper.readValue(messageArrived, HumidityTemperature.class);
-        HumidityTemperatureValidador validador = new HumidityTemperatureValidador(humidityTemperature);
-        validador.processValidation();
-        if (validador.isValid()) {
-            humidityTemperature.setDate(Utils.convertDate(humidityTemperature.getDate()));
-            PersistData persistData = new PersistData(mongoClient, humidityTemperatureList, humidityTemperature);
-            persistData.execute();
+    public void messageArrived(String topic, MqttMessage mqttMessage){
+        try {
+            String messageArrived = new String(mqttMessage.getPayload());
+            HumidityTemperature humidityTemperature = mapper.readValue(messageArrived, HumidityTemperature.class);
+            HumidityTemperatureValidador validador = new HumidityTemperatureValidador(humidityTemperature);
+            validador.processValidation();
+            if (validador.isValid()) {
+                humidityTemperature.setDate(Utils.convertDate(humidityTemperature.getDate()));
+                PersistData persistData = new PersistData(mongoClient, humidityTemperatureList, humidityTemperature);
+                persistData.execute();
+            }
+        } catch (Exception e) {
+            LOGGER.log(Level.FINE, "There was a problem mapping the HumidityTemperature DTO");
         }
     }
 
