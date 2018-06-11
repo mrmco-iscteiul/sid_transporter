@@ -4,12 +4,14 @@ import pt.iscte.sid.HumidityTemperature;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.logging.Logger;
 
 /**
  * Validator for HumidityTemperature
  */
 public class HumidityTemperatureValidador {
 
+    private static final Logger LOGGER = Logger.getLogger(HumidityTemperatureValidador.class.getName());
     private HumidityTemperature humidityTemperature;
     private boolean valid;
 
@@ -38,11 +40,14 @@ public class HumidityTemperatureValidador {
         if (processDate()) {
             if (processTime()) {
                 valid = true;
+                LOGGER.info("Date and Time are VALID.");
             } else {
                 valid = false;
+                LOGGER.info("Time is INVALID.");
             }
         } else {
             valid = false;
+            LOGGER.info("Date is INVALID.");
         }
     }
 

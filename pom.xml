@@ -8,6 +8,13 @@
     <artifactId>transporter</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
+    <repositories>
+        <repository>
+            <id>poolborges-github-thirdparty</id>
+            <name>poolborges-github</name>
+            <url>https://github.com/poolborges/maven/raw/master/thirdparty/</url>
+        </repository>
+    </repositories>
     <dependencies>
         <dependency>
             <groupId>org.eclipse.paho</groupId>
@@ -20,9 +27,10 @@
             <version>3.7.0</version>
         </dependency>
         <dependency>
-            <groupId>de.huxhorn.lilith</groupId>
-            <artifactId>de.huxhorn.lilith.3rdparty.junique</artifactId>
+            <groupId>it.sauronsoftware</groupId>
+            <artifactId>junique</artifactId>
             <version>1.0.4</version>
+            <type>jar</type>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
