@@ -43,7 +43,7 @@ public class Main {
             try {
                 WatchService watchService = FileSystems.getDefault().newWatchService();
                 Path path = Paths.get(System.getProperty("user.dir"));
-                if (!new File(path.toString() + "/config.properties").exists()) {
+                if (!new File(path.toString() + System.lineSeparator() + "config.properties").exists()) {
                     LOGGER.info("The configuration file doesn't exist. Please try again with the configuration file.");
                     System.exit(1);
                 }
@@ -109,7 +109,7 @@ public class Main {
         Properties properties = new Properties();
         InputStream inputStream = null;
         try {
-            inputStream = new FileInputStream(System.getProperty("user.dir") + "/config.properties");
+            inputStream = new FileInputStream(System.getProperty("user.dir") + System.lineSeparator() + "config.properties");
             properties.load(inputStream);
             ApplicationConstants.IP = properties.getProperty("ip");
             ApplicationConstants.PORT = properties.getProperty("port");
